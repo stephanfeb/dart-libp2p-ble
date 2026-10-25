@@ -17,6 +17,8 @@ import 'package:flutter/material.dart' hide ConnectionState;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'libp2p_panel.dart';
+
 final serviceUuid = UUID.fromString('b1e5f00d-0000-4c1b-9d6e-5d1e0a9f2b01');
 final rxUuid = UUID.fromString('b1e5f00d-0001-4c1b-9d6e-5d1e0a9f2b01'); // central -> host
 final txUuid = UUID.fromString('b1e5f00d-0002-4c1b-9d6e-5d1e0a9f2b01'); // host -> central
@@ -132,10 +134,18 @@ class _HomePageState extends State<HomePage> {
                   child: const Text('Join (central)'),
                 ),
               ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: FilledButton.tonal(
+                  onPressed: () => setState(() => _mode = 'libp2p'),
+                  child: const Text('libp2p'),
+                ),
+              ),
             ]),
           ),
         if (_mode == 'host') HostPanel(log: log),
         if (_mode == 'join') JoinPanel(log: log),
+        if (_mode == 'libp2p') Libp2pPanel(log: log),
         const Divider(height: 1),
         Expanded(
           child: ListView.builder(
