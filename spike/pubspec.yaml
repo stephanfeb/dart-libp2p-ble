@@ -93,8 +93,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-
-# Until dart_libp2p 4.10.0 is published.
-dependency_overrides:
-  dart_libp2p:
-    path: ../../dart-libp2p

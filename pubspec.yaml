@@ -29,10 +29,3 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-
-# Until dart_libp2p 4.10.0 (the /ble multiaddr code) is published.
-dependency_overrides:
-  dart_libp2p:
-    path: ../dart-libp2p
-  dart_libp2p_pubsub:
-    path: ../dart-libp2p-pubsub
