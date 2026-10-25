@@ -8,6 +8,9 @@
   succeeded to the impostor and `peerFound` named the copied peer. Discovery
   now checks that the dialed peer is connected, and forgets the token's
   peer ID otherwise.
+- Docs: how to quiet the `bluetooth_low_energy` plugin's `INFO` logs (one
+  line per advertisement and per GATT value) in `doc/platforms.md`; the
+  example app does it.
 - Guides in `doc/`: getting started, platforms, discovery, testing without
   Bluetooth, how it works. `example/mesh_in_memory.dart` (A - B - C gossip on
   in-memory radios), which the tests run; the doc samples come from the

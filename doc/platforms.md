@@ -98,5 +98,23 @@ project.
 - **Turn on the transport's logs** to see each step. The loggers are
   `BleTransport`, `BleConn`, `BleDiscovery` and `BluetoothLowEnergyRadio`, at
   level `FINE`.
+- **Quiet the Bluetooth plugin's logs.** `bluetooth_low_energy` logs every
+  advertisement it sees and every GATT value it writes or reads at level
+  `INFO`, through the loggers `CentralManager` and `PeripheralManager`. That
+  is many lines a second, with the bytes. An app that prints `INFO` records
+  sees all of them. Set those two loggers to `WARNING`:
+
+<!-- example: example/main.dart#logging -->
+```dart
+Logger.root.level = Level.INFO;
+Logger.root.onRecord.listen((r) => print('${r.level.name} ${r.loggerName}: ${r.message}'));
+// bluetooth_low_energy logs every advertisement and GATT value at INFO,
+// many lines a second: keep only its warnings.
+hierarchicalLoggingEnabled = true;
+for (final name in ['CentralManager', 'PeripheralManager']) {
+  Logger(name).level = Level.WARNING;
+}
+```
+<!-- /example -->
 - **The test app in the repository** (`spike/`) runs a libp2p host on BLE
   with discovery, pings and gossip, and shows the log on screen.

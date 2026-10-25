@@ -10,8 +10,20 @@ import 'package:dart_libp2p/core/crypto/ed25519.dart';
 import 'package:dart_libp2p/core/peer/peer_id.dart';
 import 'package:dart_libp2p/p2p/protocol/ping/ping.dart';
 import 'package:dart_libp2p_ble/dart_libp2p_ble.dart';
+import 'package:logging/logging.dart';
 
 Future<void> main() async {
+  // #region logging
+  Logger.root.level = Level.INFO;
+  Logger.root.onRecord.listen((r) => print('${r.level.name} ${r.loggerName}: ${r.message}'));
+  // bluetooth_low_energy logs every advertisement and GATT value at INFO,
+  // many lines a second: keep only its warnings.
+  hierarchicalLoggingEnabled = true;
+  for (final name in ['CentralManager', 'PeripheralManager']) {
+    Logger(name).level = Level.WARNING;
+  }
+  // #endregion logging
+
   // #region host
   final keyPair = await generateEd25519KeyPair();
   final peerId = PeerId.fromPublicKey(keyPair.publicKey);
