@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2026-10-25
 
 - `BleDiscovery` keeps its link budget for inbound connections too: when
   nodes dial in past `maxLinks`, it closes the newest inbound connections.

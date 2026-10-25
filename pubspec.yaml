@@ -2,7 +2,7 @@ name: dart_libp2p_ble
 description: >-
   Bluetooth LE transport (/ble) for dart-libp2p: phones and Macs nearby
   connect without a network, with Noise and yamux over GATT.
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/stephanfeb/dart-libp2p-ble
 issue_tracker: https://github.com/stephanfeb/dart-libp2p-ble/issues
 topics: [libp2p, bluetooth, ble, p2p, networking]
