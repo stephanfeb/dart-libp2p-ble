@@ -7,11 +7,14 @@ import 'package:dart_libp2p_ble/dart_libp2p_ble.dart';
 import 'package:dart_libp2p_ble/testing.dart';
 
 /// A started host whose only transport is BLE over [net].
-Future<(Host, BleTransport, FakeBleRadio)> newBleHost(FakeBleNetwork net, {String? token}) async {
+///
+/// [claimedPeer] is the peer ID the transport publishes in its identity
+/// characteristic; by default the host's own. Another one makes an impostor.
+Future<(Host, BleTransport, FakeBleRadio)> newBleHost(FakeBleNetwork net, {String? token, PeerId? claimedPeer}) async {
   final keyPair = await generateEd25519KeyPair();
   final peerId = PeerId.fromPublicKey(keyPair.publicKey);
   final radio = net.newRadio();
-  final ble = BleTransport(radio: radio, localPeer: peerId, token: token);
+  final ble = BleTransport(radio: radio, localPeer: claimedPeer ?? peerId, token: token);
   final host = await Libp2p.new_([
     Libp2p.identity(keyPair),
     Libp2p.transport(ble),

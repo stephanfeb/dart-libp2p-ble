@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dart_libp2p/core/host/host.dart';
+import 'package:dart_libp2p/core/crypto/ed25519.dart';
 import 'package:dart_libp2p/core/network/network.dart';
+import 'package:dart_libp2p/core/peer/peer_id.dart';
 import 'package:dart_libp2p_ble/dart_libp2p_ble.dart';
 import 'package:dart_libp2p_ble/testing.dart';
 import 'package:dart_libp2p_pubsub/dart_libp2p_pubsub.dart';
@@ -91,6 +93,29 @@ void main() {
       await d.start();
       await _until(() => high.network.connectedness(low.id) == Connectedness.connected);
       expect(d.knownTokens['aaaaaa'], equals(low.id));
+    }, timeout: const Timeout(Duration(minutes: 1)));
+
+    test('a device that copies another peer ID is not reported as that peer', () async {
+      final net = FakeBleNetwork();
+      final victim = PeerId.fromPublicKey((await generateEd25519KeyPair()).publicKey);
+      // The impostor publishes the victim's peer ID; Noise proves its own.
+      final (impostor, _, _) = await newBleHost(net, token: 'zzzzzz', claimedPeer: victim);
+      final (dialer, dialerBle, _) = await newBleHost(net, token: 'aaaaaa');
+      final d = _discovery(dialer, dialerBle);
+      final found = <PeerId>[];
+      d.peerFound.listen(found.add);
+      addTearDown(() async {
+        await d.dispose();
+        await impostor.close();
+        await dialer.close();
+      });
+      await d.start();
+
+      // Give discovery time to see the impostor and dial it.
+      await Future<void>.delayed(const Duration(seconds: 3));
+      expect(found, isNot(contains(victim)));
+      expect(dialer.network.connectedness(victim), equals(Connectedness.notConnected));
+      expect(d.knownTokens['zzzzzz'], isNot(equals(victim)));
     }, timeout: const Timeout(Duration(minutes: 1)));
   });
 }

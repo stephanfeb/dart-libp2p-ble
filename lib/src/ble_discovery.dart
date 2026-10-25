@@ -129,6 +129,14 @@ class BleDiscovery {
       final addr = bleAddr(token);
       await host.peerStore.addrBook.addAddrs(peer, [addr], addrTtl);
       await host.connect(AddrInfo(peer, [addr]));
+      // The identity characteristic is not authenticated: a device can
+      // copy another node's peer ID. Noise proves who answered, and
+      // dart_libp2p before 4.11.0 does not fail the dial when that is
+      // someone else, so check that the peer itself is connected.
+      if (host.network.connectedness(peer) != Connectedness.connected) {
+        _peerOfToken.remove(token);
+        throw StateError('$token answered as a different peer than ${peer.toBase58()}');
+      }
       _log.fine('$token: connected to ${peer.toBase58()}');
       _found.add(peer);
     } catch (e) {

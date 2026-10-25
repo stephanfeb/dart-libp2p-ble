@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Security: `BleDiscovery` no longer reports a peer it did not reach. The
+  identity characteristic is not authenticated, so a device could publish
+  another node's peer ID; with dart_libp2p before 4.11.0 the dial then
+  succeeded to the impostor and `peerFound` named the copied peer. Discovery
+  now checks that the dialed peer is connected, and forgets the token's
+  peer ID otherwise.
 - Guides in `doc/`: getting started, platforms, discovery, testing without
   Bluetooth, how it works. `example/mesh_in_memory.dart` (A - B - C gossip on
   in-memory radios), which the tests run; the doc samples come from the
