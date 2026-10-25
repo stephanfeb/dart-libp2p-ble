@@ -1,0 +1,12 @@
+# Replaces .gitignore for `dart pub publish`, so it repeats those entries.
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+.idea/
+*.iml
+.DS_Store
+
+# The device test app is not part of the package.
+spike/

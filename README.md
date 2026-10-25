@@ -4,8 +4,23 @@ Bluetooth LE transport (`/ble`) for [dart-libp2p](https://github.com/stephanfeb/
 phones and Macs nearby connect without a network. Each connection is one GATT
 link; libp2p secures it with Noise and multiplexes it with yamux, as on TCP.
 
-Status: in development (dart-libp2p-zc4). Tested in memory (`FakeBleNetwork`);
-device tests run with the app in `spike/`.
+Status: first release (0.1.0). Tested in memory (`FakeBleNetwork`) and on
+devices (Pixel 10a and iPhone: ping and gossipsub) with the test app in the
+repository's `spike/`. Platforms: Android, iOS, macOS.
+
+## Install
+
+```yaml
+dependencies:
+  dart_libp2p: ^4.10.0
+  dart_libp2p_ble: ^0.1.0
+```
+
+Add the Bluetooth permissions (Android) and usage descriptions (iOS, macOS)
+that [bluetooth_low_energy](https://pub.dev/packages/bluetooth_low_energy)
+documents.
+
+## Usage
 
 ```dart
 final ble = BleTransport(radio: BluetoothLowEnergyRadio(), localPeer: peerId);
