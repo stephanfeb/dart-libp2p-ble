@@ -2,7 +2,7 @@
 //
 // Run this in a Flutter app on two devices (Android, iOS or macOS). Add the
 // Bluetooth permissions (Android) and usage descriptions (iOS, macOS) that
-// bluetooth_low_energy documents.
+// doc/platforms.md lists.
 
 // ignore_for_file: avoid_print
 import 'package:dart_libp2p/config/config.dart';
@@ -12,6 +12,7 @@ import 'package:dart_libp2p/p2p/protocol/ping/ping.dart';
 import 'package:dart_libp2p_ble/dart_libp2p_ble.dart';
 
 Future<void> main() async {
+  // #region host
   final keyPair = await generateEd25519KeyPair();
   final peerId = PeerId.fromPublicKey(keyPair.publicKey);
   final ble = BleTransport(radio: BluetoothLowEnergyRadio(), localPeer: peerId);
@@ -27,11 +28,14 @@ Future<void> main() async {
   ]);
   await host.start();
   print('listening on ${ble.listenAddr}');
+  // #endregion host
 
+  // #region discovery
   final discovery = BleDiscovery(host: host, transport: ble);
   discovery.peerFound.listen((peer) async {
     final result = await PingService(host).ping(peer).first;
     print('ping ${peer.toBase58()}: ${result.rtt?.inMilliseconds} ms');
   });
   await discovery.start();
+  // #endregion discovery
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Guides in `doc/`: getting started, platforms, discovery, testing without
+  Bluetooth, how it works. `example/mesh_in_memory.dart` (A - B - C gossip on
+  in-memory radios), which the tests run; the doc samples come from the
+  examples (`tool/embed_examples.dart`).
+
 ## 0.1.0 - 2026-10-25
 
 First release. Needs dart_libp2p 4.10.0 or later.

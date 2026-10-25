@@ -34,6 +34,13 @@ final discovery = BleDiscovery(host: host, transport: ble);
 await discovery.start(); // scans, and connects to nearby nodes
 ```
 
+## Guides
+
+The guides are in [`doc/`](doc/index.md) and on
+[cryptopeer.net](https://cryptopeer.net/libp2p/ble/): getting started,
+platforms (permissions), discovery, testing without Bluetooth, and how it
+works.
+
 ## How it works
 
 - **Service**: one GATT service with RX (central writes), TX (peripheral
