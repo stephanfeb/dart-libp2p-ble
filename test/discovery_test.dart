@@ -13,11 +13,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/hosts.dart';
 
-BleDiscovery _discovery(Host h, BleTransport t) => BleDiscovery(
+BleDiscovery _discovery(Host h, BleTransport t,
+        {int maxLinks = 4, int? minRssi, int? swapMargin, Duration retryAfter = const Duration(seconds: 30)}) =>
+    BleDiscovery(
       host: h,
       transport: t,
       yieldFor: const Duration(seconds: 1),
       recheckEvery: const Duration(milliseconds: 200),
+      maxLinks: maxLinks,
+      minRssi: minRssi,
+      swapMargin: swapMargin,
+      minLinkAge: Duration.zero,
+      retryAfter: retryAfter,
     );
 
 Future<void> _until(bool Function() ok, {Duration within = const Duration(seconds: 20)}) async {
@@ -116,6 +123,95 @@ void main() {
       expect(found, isNot(contains(victim)));
       expect(dialer.network.connectedness(victim), equals(Connectedness.notConnected));
       expect(d.knownTokens['zzzzzz'], isNot(equals(victim)));
+    }, timeout: const Timeout(Duration(minutes: 1)));
+
+    test('a device heard below minRssi is not dialed', () async {
+      final net = FakeBleNetwork();
+      final (me, meBle, meRadio) = await newBleHost(net, token: 'aaaaaa');
+      final (far, _, farRadio) = await newBleHost(net, token: 'bbbbbb');
+      final (near, _, _) = await newBleHost(net, token: 'cccccc');
+      net.setRssi(meRadio, farRadio, -95);
+      final d = _discovery(me, meBle, minRssi: -85);
+      addTearDown(() async {
+        await d.dispose();
+        for (final h in [me, far, near]) {
+          await h.close();
+        }
+      });
+      await d.start();
+      await _until(() => me.network.connectedness(near.id) == Connectedness.connected);
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(me.network.connectedness(far.id), equals(Connectedness.notConnected));
+    }, timeout: const Timeout(Duration(minutes: 1)));
+
+    test('inbound connections past maxLinks are closed, newest first', () async {
+      final net = FakeBleNetwork();
+      // 'zzzzzz' has the highest token, so the others dial it.
+      final (hub, hubBle, _) = await newBleHost(net, token: 'zzzzzz');
+      final others = [
+        for (final t in ['aaaaaa', 'bbbbbb', 'cccccc', 'dddddd']) await newBleHost(net, token: t)
+      ];
+      final hubD = _discovery(hub, hubBle, maxLinks: 2);
+      final ds = [for (final (h, t, _) in others) _discovery(h, t, retryAfter: const Duration(seconds: 1))];
+      addTearDown(() async {
+        for (final d in [hubD, ...ds]) {
+          await d.dispose();
+        }
+        for (final h in [hub, for (final (h, _, _) in others) h]) {
+          await h.close();
+        }
+      });
+      await hubD.start();
+      // The first two dial in, then the other two.
+      await ds[0].start();
+      await ds[1].start();
+      await _until(() => hubD.bleConnections == 2);
+      final first = {others[0].$1.id, others[1].$1.id};
+      await ds[2].start();
+      await ds[3].start();
+
+      // The late ones keep dialing (retryAfter 1 s); the hub stays at 2 and
+      // keeps its first links.
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        await _until(() => hubD.bleConnections <= 2, within: const Duration(seconds: 2));
+      }
+      await _until(() => hubD.bleConnections == 2);
+      expect(first.every((p) => hub.network.connectedness(p) == Connectedness.connected), isTrue);
+    }, timeout: const Timeout(Duration(minutes: 1)));
+
+    test('a full node swaps its weakest link for a much stronger device', () async {
+      final net = FakeBleNetwork();
+      final (me, meBle, meRadio) = await newBleHost(net, token: 'aaaaaa');
+      final (weak, _, weakRadio) = await newBleHost(net, token: 'bbbbbb');
+      final (strong, _, strongRadio) = await newBleHost(net, token: 'cccccc');
+      net
+        ..setRssi(meRadio, weakRadio, -85)
+        ..setInRange(meRadio, strongRadio, false);
+      final d = _discovery(me, meBle, maxLinks: 1, swapMargin: 15);
+      addTearDown(() async {
+        await d.dispose();
+        for (final h in [me, weak, strong]) {
+          await h.close();
+        }
+      });
+      await d.start();
+      await _until(() => me.network.connectedness(weak.id) == Connectedness.connected);
+
+      // 'cccccc' comes in range 10 dB stronger: not enough.
+      net
+        ..setRssi(meRadio, strongRadio, -75)
+        ..setInRange(meRadio, strongRadio, true);
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(me.network.connectedness(weak.id), equals(Connectedness.connected));
+      expect(me.network.connectedness(strong.id), equals(Connectedness.notConnected));
+
+      // 30 dB stronger: it replaces the weak link.
+      net.setRssi(meRadio, strongRadio, -55);
+      await _until(() =>
+          me.network.connectedness(strong.id) == Connectedness.connected &&
+          me.network.connectedness(weak.id) != Connectedness.connected);
+      expect(d.bleConnections, equals(1));
     }, timeout: const Timeout(Duration(minutes: 1)));
   });
 }

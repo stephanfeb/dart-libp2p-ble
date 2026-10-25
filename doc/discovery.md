@@ -21,10 +21,34 @@ that, **the node with the lower token dials**. The node with the higher token
 waits, and dials only if no connection came after `yieldFor` (8 seconds), in
 case the other node cannot hear it.
 
-A node keeps at most `maxLinks` BLE connections (4). Phones can hold only a
-few BLE links at a time, and each link shares the same radio time. In a room
-with more nodes, each node connects to some of them, and the protocols on
-top relay across the partial mesh.
+A node keeps at most `maxLinks` BLE connections (4), in both directions.
+Phones can hold only a few BLE links at a time, and each link shares the
+same radio time. In a room with more nodes, each node connects to some of
+them, and the protocols on top relay across the partial mesh. When other
+nodes dial in past the budget, the node closes the newest inbound
+connections. A node that connected to a token does not dial it again for
+`retryAfter`, so a full node is not dialed again at once.
+
+## Signal strength
+
+With `minRssi`, discovery does not dial a device that it hears weaker than
+that (in dBm). A weak link is slow and drops often.
+
+With `swapMargin`, a full node that hears a device at least that many dB
+stronger than its weakest link closes that link and dials the stronger
+device. Only links open for `minLinkAge` or longer are swapped out, and
+only links whose device discovery heard (it knows their signal strength).
+Swaps are off by default: the weak link can be the only bridge to another
+part of the mesh, and a swap then cuts the mesh in two.
+
+```dart
+final discovery = BleDiscovery(
+  host: host,
+  transport: ble,
+  minRssi: -90,
+  swapMargin: 15,
+);
+```
 
 ## A mesh
 
@@ -59,9 +83,12 @@ shows the rest of it.
 
 | Parameter | Default | What it does |
 |---|---|---|
-| `maxLinks` | 4 | Most BLE connections this node opens. |
+| `maxLinks` | 4 | Most BLE connections this node keeps, inbound ones included. |
 | `yieldFor` | 8 s | How long the higher token waits for the lower one to dial. |
-| `retryAfter` | 30 s | How long to wait before trying a token again after a dial fails. |
+| `retryAfter` | 30 s | How long to wait before trying a token again after a dial fails, or after a connection to it. |
+| `minRssi` | none | Devices heard weaker than this (dBm) are not dialed. |
+| `swapMargin` | none (off) | When full, a device this many dB stronger than the weakest link replaces it. |
+| `minLinkAge` | 1 min | Links younger than this are not swapped out. |
 | `addrTtl` | 10 min | How long a learned `/ble` address stays in the peerstore. |
 | `recheckEvery` | 3 s | How often the tokens seen so far are looked at again. |
 
@@ -80,8 +107,9 @@ peers, watch the host's network.
 
 ## Limits
 
-- **Inbound links do not count against `maxLinks`.** A node opens at most
-  `maxLinks` links, but it accepts every node that dials it.
+- **A closed inbound link can stay open on the other side for a while.**
+  iOS cannot disconnect a central: the peripheral stops sending, and the
+  central's side ends when its streams time out.
 - **Tokens change on restart.** A token means something only to devices
   nearby, and only while the node runs. To find a known peer again, use its
   peer ID, not its token.

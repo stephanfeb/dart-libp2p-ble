@@ -96,6 +96,5 @@ for large transfers, connect over Wi-Fi when you can.
 
 - Writes use write with response. Write without response could be faster,
   but is not tested yet.
-- Inbound connections do not count against discovery's `maxLinks`.
 - The radio does not run in the background ([Platforms](platforms.md)).
 - The manufacturer data uses the test company ID `0xFFFF`.

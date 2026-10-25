@@ -17,6 +17,7 @@ class FakeBleNetwork {
 
   final _radios = <FakeBleRadio>[];
   final _outOfRange = <(FakeBleRadio, FakeBleRadio)>{};
+  final _rssi = <(FakeBleRadio, FakeBleRadio), int>{};
 
   FakeBleNetwork({this.maxValueLength = 512, this.latency = Duration.zero});
 
@@ -42,6 +43,18 @@ class FakeBleNetwork {
     }
   }
 
+  /// Sets the signal strength (dBm) that [a] and [b] hear each other at
+  /// (-50 unless set).
+  void setRssi(FakeBleRadio a, FakeBleRadio b, int rssi) {
+    _rssi[(a, b)] = rssi;
+    _rssi[(b, a)] = rssi;
+    for (final r in [a, b]) {
+      r._announceAll();
+    }
+  }
+
+  int _rssiOf(FakeBleRadio a, FakeBleRadio b) => _rssi[(a, b)] ?? -50;
+
   bool inRange(FakeBleRadio a, FakeBleRadio b) =>
       a != b && !_outOfRange.contains((a, b)) && !_outOfRange.contains((b, a));
 
@@ -55,7 +68,7 @@ class FakeBleNetwork {
   void _announce(FakeBleRadio advertiser) {
     for (final r in _radios) {
       if (r._scanning && inRange(r, advertiser)) {
-        r._sightings.add(BleSighting(advertiser._token!, rssi: -50));
+        r._sightings.add(BleSighting(advertiser._token!, rssi: _rssiOf(r, advertiser)));
       }
     }
   }
@@ -82,7 +95,9 @@ class FakeBleRadio implements BleRadio {
     if (_advertising) _network._announce(this);
     if (_scanning) {
       for (final r in _network._radios) {
-        if (r._advertising && _network.inRange(this, r)) _sightings.add(BleSighting(r._token!, rssi: -50));
+        if (r._advertising && _network.inRange(this, r)) {
+          _sightings.add(BleSighting(r._token!, rssi: _network._rssiOf(this, r)));
+        }
       }
     }
   }

@@ -70,6 +70,7 @@ flutter test test/examples_test.dart
 | `FakeBleNetwork(maxValueLength:)` | 512 | Largest GATT value. Set 20 or 182 to test small MTUs: connections split their writes into more values. |
 | `FakeBleNetwork(latency:)` | none | Delay of each value. Values stay in order. |
 | `setInRange(a, b, false)` | in range | `a` and `b` do not see each other and cannot connect. Links that are open stay open. |
+| `setRssi(a, b, dBm)` | -50 | The signal strength in the sightings `a` and `b` get of each other, for `minRssi` and `swapMargin`. |
 | `radio.openLinks` | | Number of links a radio has open, in both roles. |
 
 ## What it does not cover

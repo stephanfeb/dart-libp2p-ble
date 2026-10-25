@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `BleDiscovery` keeps its link budget for inbound connections too: when
+  nodes dial in past `maxLinks`, it closes the newest inbound connections.
+  After a connection to a token, it does not dial that token again for
+  `retryAfter`.
+- `BleDiscovery.minRssi`: devices heard weaker than this are not dialed.
+- `BleDiscovery.swapMargin` and `minLinkAge` (off by default): a full node
+  replaces its weakest link with a device that is that many dB stronger.
+- Testing: `FakeBleNetwork.setRssi` sets the signal strength two radios hear
+  each other at.
 - Security: `BleDiscovery` no longer reports a peer it did not reach. The
   identity characteristic is not authenticated, so a device could publish
   another node's peer ID; with dart_libp2p before 4.11.0 the dial then
